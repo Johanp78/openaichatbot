@@ -1,30 +1,35 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-require('dotenv').config();
-const { Configuration, OpenAIApi } = require('openai');
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+require("dotenv").config();
+const OpenAI = require("openai");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const configuration = new Configuration({
+// Serve static files (index.html, script.js, etc.)
+app.use(express.static(path.join(__dirname)));
+
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
-app.post('/ask', async (req, res) => {
+app.post("/ask", async (req, res) => {
   const { prompt } = req.body;
 
   try {
-    const response = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
-      messages: [{ role: 'user', content: prompt }],
+    const response = await openai.chat.completions.create({
+      model: "gpt-4.1",
+      messages: [{ role: "user", content: prompt }],
     });
-    res.json({ reply: response.data.choices[0].message.content });
+    res.json({ reply: response.choices[0].message.content });
   } catch (error) {
-    res.status(500).json({ error: 'Error communicating with OpenAI API' });
+    console.error("OpenAI error:", error);
+    res.status(500).json({ error: "Failed to get response from OpenAI." });
   }
 });
 
-app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+app.listen(3000, () => console.log("Server running on http://localhost:3000"));
+
